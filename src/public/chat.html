@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h2>💬 Chat en tiempo real</h2>
+  <button onclick="goBack()">Volver</button>
+  <ul id="messages"></ul>
+
+  <form id="form">
+    <input id="input" autocomplete="off" placeholder="Escribe un mensaje..." />
+    <button>Enviar</button>
+  </form>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Debes iniciar sesión primero');
+      location.href = '/';
+    }
+
+    const socket = io({ auth: { token } });
+
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+    const messages = document.getElementById('messages');
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      if (input.value) {
+        socket.emit('chat message', input.value);
+        input.value = '';
+      }
+    });
+
+    socket.on('chat message', msg => {
+      const li = document.createElement('li');
+      li.textContent = msg;
+      messages.appendChild(li);
+      window.scrollTo(0, document.body.scrollHeight);
+    });
+
+    function goBack() {
+      location.href = '/';
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Portal de Productos</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>🛍️ Portal de Productos</h1>
+
+  <div id="auth-section">
+    <h2>Login / Registro</h2>
+    <input id="username" placeholder="Usuario"><br>
+    <input id="password" type="password" placeholder="Contraseña"><br>
+    <button onclick="register()">Registrarse</button>
+    <button onclick="login()">Iniciar sesión</button>
+  </div>
+
+  <div id="app-section" style="display:none;">
+    <h2>Bienvenido, <span id="user-name"></span> (<span id="user-role"></span>)</h2>
+    <button onclick="logout()">Cerrar sesión</button>
+    <button onclick="loadProducts()">Ver productos</button>
+    <button onclick="goChat()">Ir al chat</button>
+    <div id="products"></div>
+  </div>
+
+  <script src="client.js"></script>
+</body>
+</html>

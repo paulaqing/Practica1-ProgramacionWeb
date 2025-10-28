@@ -1,0 +1,36 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 2rem;
+}
+
+h1, h2 {
+  text-align: center;
+}
+
+#products {
+  margin-top: 1rem;
+}
+
+button {
+  margin: 0.3rem;
+  padding: 0.4rem 0.8rem;
+  border: none;
+  background-color: #333;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #555;
+}
+
+#messages {
+  list-style-type: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+#messages > li:nth-child(odd) {
+  background: #f1f1f1;
+}
