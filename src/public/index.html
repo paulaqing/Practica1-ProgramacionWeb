@@ -1,29 +1,147 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Portal de Productos</title>
-  <link rel="stylesheet" href="styles.css">
+    <title>Portal de Productos y Chat</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        #chat-section, #portal-section { display: none; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 0.5rem 0; }
+        input, button { padding: 0.3rem; margin: 0.2rem 0; }
+    </style>
 </head>
 <body>
-  <h1>🛍️ Portal de Productos</h1>
+    <div id="auth-section">
+        <h2>Autenticación</h2>
+        <input id="username" placeholder="Usuario" required>
+        <input id="password" type="password" placeholder="Contraseña" required>
+        <button onclick="register()">Registrar</button>
+        <button onclick="login()">Iniciar Sesión</button>
+    </div>
 
-  <div id="auth-section">
-    <h2>Login / Registro</h2>
-    <input id="username" placeholder="Usuario"><br>
-    <input id="password" type="password" placeholder="Contraseña"><br>
-    <button onclick="register()">Registrarse</button>
-    <button onclick="login()">Iniciar sesión</button>
-  </div>
+    <div id="portal-section">
+        <h2>Portal</h2>
+        <p>Bienvenido, <span id="user-name"></span> (<span id="user-role"></span>)</p>
+        <button onclick="goToChat()">Ir al Chat</button>
+        <button onclick="goToProducts()">Ir a Productos</button>
+        <button onclick="logout()">Cerrar sesión</button>
+    </div>
 
-  <div id="app-section" style="display:none;">
-    <h2>Bienvenido, <span id="user-name"></span> (<span id="user-role"></span>)</h2>
-    <button onclick="logout()">Cerrar sesión</button>
-    <button onclick="loadProducts()">Ver productos</button>
-    <button onclick="goChat()">Ir al chat</button>
-    <div id="products"></div>
-  </div>
+    <div id="chat-section">
+        <h3>Chat</h3>
+        <ul id="messages"></ul>
+        <form id="form">
+            <input id="input" autocomplete="off" placeholder="Escribe un mensaje" />
+            <button>Enviar</button>
+        </form>
+        <button onclick="backToPortal()">Volver al portal</button>
+    </div>
 
-  <script src="client.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket;
+        const token = localStorage.getItem('token');
+        const authSection = document.getElementById('auth-section');
+        const portalSection = document.getElementById('portal-section');
+        const chatSection = document.getElementById('chat-section');
+        const userNameSpan = document.getElementById('user-name');
+        const userRoleSpan = document.getElementById('user-role');
+
+        function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            }).then(r => r.json()).then(data => alert(data.message));
+        }
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            fetch('/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            }).then(r => r.json()).then(data => {
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    showPortal(data.token);
+                } else {
+                    alert('Usuario o contraseña incorrectos');
+                }
+            });
+        }
+
+        function decodeToken(token) {
+            return JSON.parse(atob(token.split('.')[1]));
+        }
+
+        function showPortal(token) {
+            authSection.style.display = 'none';
+            portalSection.style.display = 'block';
+            const payload = decodeToken(token);
+            userNameSpan.textContent = payload.username;
+            userRoleSpan.textContent = payload.role;
+        }
+
+        function goToChat() {
+            portalSection.style.display = 'none';
+            chatSection.style.display = 'block';
+            connectToChat();
+        }
+
+        function goToProducts() {
+            window.location.href = '/products.html';
+        }
+
+        function backToPortal() {
+            chatSection.style.display = 'none';
+            portalSection.style.display = 'block';
+            socket.disconnect();
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            if(socket) socket.disconnect();
+            authSection.style.display = 'block';
+            portalSection.style.display = 'none';
+            chatSection.style.display = 'none';
+        }
+
+        function connectToChat() {
+            socket = io({ auth: { token: localStorage.getItem('token') } });
+            const messages = document.getElementById('messages');
+            const form = document.getElementById('form');
+            const input = document.getElementById('input');
+
+            socket.on('messageHistory', history => {
+                messages.innerHTML = '';
+                history.forEach(msg => {
+                    const li = document.createElement('li');
+                    li.textContent = `${msg.name} (${msg.timestamp}): ${msg.msg}`;
+                    messages.appendChild(li);
+                });
+            });
+
+            socket.on('chatmessage', msg => {
+                const li = document.createElement('li');
+                li.textContent = `${msg.name} (${msg.timestamp}): ${msg.msg}`;
+                messages.appendChild(li);
+                window.scrollTo(0, document.body.scrollHeight);
+            });
+
+            form.addEventListener('submit', e => {
+                e.preventDefault();
+                if (input.value) {
+                    socket.emit('chatmessage', input.value);
+                    input.value = '';
+                }
+            });
+        }
+
+        if(token) showPortal(token);
+    </script>
 </body>
 </html>

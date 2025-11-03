@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Gestión de Productos</title>
+    <style>
+        body { font-family: sans-serif; margin:20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+        th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+        th { background-color: #f4f4f4; }
+        button { margin: 0.2rem; }
+        #form-section { margin-top: 2rem; display: none; }
+        input, textarea { width: 100%; padding: 0.3rem; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+    <h2>Gestión de Productos</h2>
+
+    <button onclick="logout()">Cerrar sesión</button>
+
+    <h3>Lista de productos</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="products-table">
+            <!-- Productos se cargan aquí -->
+        </tbody>
+    </table>
+
+    <div id="form-section">
+        <h3 id="form-title">Crear producto</h3>
+        <input id="name" placeholder="Nombre" required>
+        <textarea id="description" placeholder="Descripción"></textarea>
+        <input id="price" type="number" placeholder="Precio" required>
+        <button onclick="saveProduct()">Guardar</button>
+        <button onclick="cancelEdit()">Cancelar</button>
+    </div>
+
+    <script>
+        let token = localStorage.getItem('token');
+        if (!token) {
+            alert('Debes iniciar sesión');
+            window.location.href = '/';
+        }
+
+        let editId = null;
+
+        async function fetchProducts() {
+            const res = await fetch('/api/products', {
+                headers: { 'Authorization': token }
+            });
+            const products = await res.json();
+            renderTable(products);
+        }
+
+        function renderTable(products) {
+            const tbody = document.getElementById('products-table');
+            tbody.innerHTML = '';
+            products.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${p.name}</td>
+                    <td>${p.description || ''}</td>
+                    <td>${p.price}</td>
+                    <td>
+                        ${isAdmin() ? `<button onclick="editProduct('${p._id}', '${p.name}', '${p.description}', ${p.price})">Editar</button>
+                        <button onclick="deleteProduct('${p._id}')">Eliminar</button>` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function isAdmin() {
+            // Decodificar token para obtener rol
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.role === 'admin';
+        }
+
+        function showForm() {
+            document.getElementById('form-section').style.display = 'block';
+        }
+
+        function hideForm() {
+            document.getElementById('form-section').style.display = 'none';
+            editId = null;
+            document.getElementById('name').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('price').value = '';
+        }
+
+        function editProduct(id, name, description, price) {
+            editId = id;
+            document.getElementById('form-title').textContent = 'Editar producto';
+            document.getElementById('name').value = name;
+            document.getElementById('description').value = description;
+            document.getElementById('price').value = price;
+            showForm();
+        }
+
+        function cancelEdit() {
+            hideForm();
+        }
+
+        async function saveProduct() {
+            const name = document.getElementById('name').value;
+            const description = document.getElementById('description').value;
+            const price = document.getElementById('price').value;
+
+            if (!name || !price) {
+                alert('Nombre y precio son obligatorios');
+                return;
+            }
+
+            let url = '/api/products';
+            let method = 'POST';
+            if (editId) {
+                url += `/${editId}`;
+                method = 'PUT';
+            }
+
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json', 'Authorization': token },
+                body: JSON.stringify({ name, description, price })
+            });
+
+            if (res.ok) {
+                fetchProducts();
+                hideForm();
+            } else {
+                const data = await res.json();
+                alert(data.message || 'Error');
+            }
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('¿Seguro que quieres eliminar este producto?')) return;
+            const res = await fetch(`/api/products/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': token }
+            });
+            if (res.ok) {
+                fetchProducts();
+            } else {
+                const data = await res.json();
+                alert(data.message || 'Error');
+            }
+        }
+
+        // Mostrar formulario solo si es admin
+        if (isAdmin()) {
+            document.getElementById('form-section').style.display = 'block';
+        }
+
+        async function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        }
+
+        fetchProducts();
+    </script>
+</body>
+</html>
