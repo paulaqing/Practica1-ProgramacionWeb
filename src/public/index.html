@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Portal de Productos y Chat</title>
+    <title>Inicio - Portal de Productos y Chat</title>
     <style>
         body { font-family: sans-serif; margin: 20px; }
-        #chat-section, #portal-section { display: none; }
+        #chat-section, #inicio-section { display: none; }
         ul { list-style: none; padding: 0; }
         li { padding: 0.5rem 0; }
         input, button { padding: 0.3rem; margin: 0.2rem 0; }
@@ -19,8 +19,8 @@
         <button onclick="login()">Iniciar Sesión</button>
     </div>
 
-    <div id="portal-section">
-        <h2>Portal</h2>
+    <div id="inicio-section">
+        <h2>Inicio</h2>
         <p>Bienvenido, <span id="user-name"></span> (<span id="user-role"></span>)</p>
         <button onclick="goToChat()">Ir al Chat</button>
         <button onclick="goToProducts()">Ir a Productos</button>
@@ -34,7 +34,7 @@
             <input id="input" autocomplete="off" placeholder="Escribe un mensaje" />
             <button>Enviar</button>
         </form>
-        <button onclick="backToPortal()">Volver al portal</button>
+        <button onclick="backToInicio()">Volver al inicio</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -42,7 +42,7 @@
         let socket;
         const token = localStorage.getItem('token');
         const authSection = document.getElementById('auth-section');
-        const portalSection = document.getElementById('portal-section');
+        const inicioSection = document.getElementById('inicio-section');
         const chatSection = document.getElementById('chat-section');
         const userNameSpan = document.getElementById('user-name');
         const userRoleSpan = document.getElementById('user-role');
@@ -67,7 +67,7 @@
             }).then(r => r.json()).then(data => {
                 if (data.token) {
                     localStorage.setItem('token', data.token);
-                    showPortal(data.token);
+                    showInicio(data.token);
                 } else {
                     alert('Usuario o contraseña incorrectos');
                 }
@@ -78,16 +78,16 @@
             return JSON.parse(atob(token.split('.')[1]));
         }
 
-        function showPortal(token) {
+        function showInicio(token) {
             authSection.style.display = 'none';
-            portalSection.style.display = 'block';
+            inicioSection.style.display = 'block';
             const payload = decodeToken(token);
             userNameSpan.textContent = payload.username;
             userRoleSpan.textContent = payload.role;
         }
 
         function goToChat() {
-            portalSection.style.display = 'none';
+            inicioSection.style.display = 'none';
             chatSection.style.display = 'block';
             connectToChat();
         }
@@ -96,17 +96,17 @@
             window.location.href = '/products.html';
         }
 
-        function backToPortal() {
+        function backToInicio() {
             chatSection.style.display = 'none';
-            portalSection.style.display = 'block';
-            socket.disconnect();
+            inicioSection.style.display = 'block';
+            if (socket) socket.disconnect();
         }
 
         function logout() {
             localStorage.removeItem('token');
-            if(socket) socket.disconnect();
+            if (socket) socket.disconnect();
             authSection.style.display = 'block';
-            portalSection.style.display = 'none';
+            inicioSection.style.display = 'none';
             chatSection.style.display = 'none';
         }
 
@@ -141,7 +141,7 @@
             });
         }
 
-        if(token) showPortal(token);
+        if (token) showInicio(token);
     </script>
 </body>
 </html>
