@@ -1,16 +1,105 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Chat</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <title>Chat en tiempo real</title>
+  <style>
+    body { margin: 0; padding-bottom: 3rem; font-family: sans-serif; background: #f9f9f9; }
+    #messages { list-style-type: none; margin: 0; padding: 0; }
+    #messages > li { padding: 0.5rem 1rem; }
+    #messages > li:nth-child(odd) { background: #efefef; }
+    #form {
+      background: rgba(0, 0, 0, 0.15);
+      padding: 0.25rem;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      display: flex;
+      height: 3rem;
+      box-sizing: border-box;
+      backdrop-filter: blur(10px);
+    }
+    #input {
+      border: none;
+      padding: 0 1rem;
+      flex-grow: 1;
+      border-radius: 2rem;
+      margin: 0.25rem;
+    }
+    #input:focus { outline: none; }
+    #form > button {
+      background: #333;
+      border: none;
+      padding: 0 1rem;
+      margin: 0.25rem;
+      border-radius: 3px;
+      outline: none;
+      color: #fff;
+      cursor: pointer;
+    }
+    h2 { text-align: center; margin: 1rem 0; }
+    button#back { margin: 1rem; }
+  </style>
 </head>
 <body>
+  <h2>Chat en tiempo real</h2>
+  <button id="back" onclick="window.location.href='/'">Volver al inicio</button>
+
   <ul id="messages"></ul>
-  <form id="form">
-    <input id="input" autocomplete="off"><button>Enviar</button>
+
+  <form id="form" action="">
+    <input id="input" autocomplete="off" placeholder="Escribe tu mensaje..." />
+    <button>Enviar</button>
   </form>
-  <button onclick="logout()">Cerrar Sesión</button>
+
   <script src="/socket.io/socket.io.js"></script>
-  <script src="client.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Debes iniciar sesión primero.');
+      window.location.href = '/';
+    }
+
+    // Conexión con token
+    const socket = io({ auth: { token } });
+    const messages = document.getElementById('messages');
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
+
+    socket.on('connect', () => {
+      console.log('✅ Conectado al chat');
+    });
+
+    socket.on('disconnect', () => {
+      console.log('🔴 Desconectado del chat');
+    });
+
+    // Cargar historial
+    socket.on('messageHistory', (history) => {
+      messages.innerHTML = '';
+      history.forEach(m => appendMessage(m.name, m.msg, m.timestamp));
+    });
+
+    // Escuchar nuevos mensajes
+    socket.on('chatmessage', (data) => {
+      appendMessage(data.name, data.msg, data.timestamp);
+    });
+
+    // Enviar mensaje
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (input.value.trim()) {
+        socket.emit('chatmessage', input.value.trim());
+        input.value = '';
+      }
+    });
+
+    // Mostrar mensajes en pantalla
+    function appendMessage(name, msg, time) {
+      const li = document.createElement('li');
+      li.textContent = `[${time}] ${name}: ${msg}`;
+      messages.appendChild(li);
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+  </script>
 </body>
 </html>

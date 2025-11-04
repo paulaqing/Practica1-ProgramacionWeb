@@ -1,61 +1,143 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Gestión de Productos</title>
   <style>
-    body { font-family: sans-serif; margin: 20px; background-color: #f8f9fa; }
-    h2 { color: #333; }
-    #product-list { margin-top: 20px; }
-    .product {
-      background: white;
+    body {
+      font-family: sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      color: #222;
+    }
+
+    form {
+      background: #fff;
+      padding: 1.5rem;
       border-radius: 8px;
-      padding: 10px 15px;
-      margin-bottom: 10px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      max-width: 600px;
+      margin: 0 auto 2rem auto;
     }
-    button {
-      margin-left: 5px;
-      padding: 5px 10px;
-      border: none;
-      border-radius: 4px;
-      background-color: #333;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover { background-color: #555; }
-    #create-form {
-      margin-top: 20px;
-      background: white;
-      padding: 15px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    input {
-      padding: 5px;
-      margin-right: 5px;
-      border-radius: 4px;
+
+    input, textarea {
+      width: 100%;
+      padding: 0.6rem;
+      margin: 0.4rem 0;
       border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    button {
+      background: #333;
+      color: white;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    button:hover {
+      background: #000;
+    }
+
+    #back {
+      background: #555;
+      margin-bottom: 1rem;
+    }
+
+    #back:hover {
+      background: #000;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    th, td {
+      padding: 0.8rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+
+    th {
+      background: #efefef;
+      color: #333;
+    }
+
+    tr:hover td {
+      background: #f5f5f5;
+    }
+
+    .actions button {
+      margin-right: 0.3rem;
+    }
+
+    .btn-danger {
+      background: #d33;
+    }
+
+    .btn-danger:hover {
+      background: #b22;
+    }
+
+    .btn-success {
+      background: #2e7d32;
+    }
+
+    .btn-success:hover {
+      background: #256528;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
     }
   </style>
 </head>
 <body>
-  <h2>Gestión de Productos</h2>
-  <p>Bienvenido, <span id="username"></span> (<span id="role"></span>)</p>
+  <div class="container">
+    <h2>Gestión de Productos</h2>
+    <button id="back" onclick="window.location.href='/'">Volver al inicio</button>
 
-  <div id="create-form" style="display: none;">
-    <h3>Crear nuevo producto</h3>
-    <input id="newName" placeholder="Nombre del producto">
-    <input id="newPrice" placeholder="Precio" type="number">
-    <button onclick="createProduct()">Crear</button>
+    <form id="productForm">
+      <input type="text" id="name" placeholder="Nombre del producto" required>
+      <textarea id="description" placeholder="Descripción del producto" required></textarea>
+      <input type="number" id="price" placeholder="Precio (€)" step="0.01" required>
+      <button type="submit" id="submitBtn">Agregar producto</button>
+    </form>
+
+    <table id="productTable">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th>Precio (€)</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
   </div>
-
-  <div id="product-list"></div>
-
-  <button onclick="window.location.href='/'">Volver al inicio</button>
 
   <script>
     const token = localStorage.getItem('token');
@@ -64,110 +146,83 @@
       window.location.href = '/';
     }
 
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const usernameSpan = document.getElementById('username');
-    const roleSpan = document.getElementById('role');
-    const createForm = document.getElementById('create-form');
-
-    usernameSpan.textContent = payload.username;
-    roleSpan.textContent = payload.role;
-
-    // Mostrar formulario de creación solo a admins
-    if (payload.role === 'admin') {
-      createForm.style.display = 'block';
-    }
+    const form = document.getElementById('productForm');
+    const tableBody = document.querySelector('#productTable tbody');
+    const submitBtn = document.getElementById('submitBtn');
+    let editId = null;
 
     async function loadProducts() {
       const res = await fetch('/api/products', {
-        headers: { 'Authorization': 'Bearer ' + token }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-
       const products = await res.json();
-      const list = document.getElementById('product-list');
-      list.innerHTML = '';
 
+      tableBody.innerHTML = '';
       products.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'product';
-        div.innerHTML = `
-          <div>
-            <strong>${p.name}</strong> - ${p.price} €
-          </div>
-          ${payload.role === 'admin' ? `
-            <div>
-              <button onclick="editProduct('${p._id}', '${p.name}', '${p.price}')">Editar</button>
-              <button onclick="deleteProduct('${p._id}')">Eliminar</button>
-            </div>
-          ` : ''}
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.name}</td>
+          <td>${p.description}</td>
+          <td>${p.price.toFixed(2)}</td>
+          <td class="actions">
+            <button class="btn-success" onclick="editProduct('${p._id}', '${p.name}', '${p.description}', ${p.price})">Editar</button>
+            <button class="btn-danger" onclick="deleteProduct('${p._id}')">Eliminar</button>
+          </td>
         `;
-        list.appendChild(div);
+        tableBody.appendChild(tr);
       });
     }
 
-    async function createProduct() {
-      const name = document.getElementById('newName').value;
-      const price = document.getElementById('newPrice').value;
+    loadProducts();
 
-      if (!name || !price) return alert('Completa todos los campos.');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-      const res = await fetch('/api/products', {
-        method: 'POST',
+      const name = document.getElementById('name').value;
+      const description = document.getElementById('description').value;
+      const price = parseFloat(document.getElementById('price').value);
+
+      const method = editId ? 'PUT' : 'POST';
+      const url = editId ? `/api/products/${editId}` : '/api/products';
+
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ name, price })
+        body: JSON.stringify({ name, description, price })
       });
 
       if (res.ok) {
-        alert('Producto creado correctamente.');
-        document.getElementById('newName').value = '';
-        document.getElementById('newPrice').value = '';
+        alert(editId ? 'Producto actualizado' : 'Producto agregado');
+        form.reset();
+        submitBtn.textContent = 'Agregar producto';
+        editId = null;
         loadProducts();
       } else {
-        alert('Error al crear el producto.');
+        alert('Error al guardar el producto');
       }
-    }
+    });
 
-    async function editProduct(id, oldName, oldPrice) {
-      const name = prompt('Nuevo nombre:', oldName);
-      const price = prompt('Nuevo precio:', oldPrice);
-      if (!name || !price) return;
-
-      const res = await fetch('/api/products/' + id, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + token
-        },
-        body: JSON.stringify({ name, price })
-      });
-
-      if (res.ok) {
-        alert('Producto actualizado.');
-        loadProducts();
-      } else {
-        alert('Error al actualizar.');
-      }
+    function editProduct(id, name, description, price) {
+      document.getElementById('name').value = name;
+      document.getElementById('description').value = description;
+      document.getElementById('price').value = price;
+      editId = id;
+      submitBtn.textContent = 'Guardar cambios';
+      submitBtn.style.background = '#2e7d32';
     }
 
     async function deleteProduct(id) {
       if (!confirm('¿Seguro que quieres eliminar este producto?')) return;
-
-      const res = await fetch('/api/products/' + id, {
+      const res = await fetch(`/api/products/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': 'Bearer ' + token }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-
-      if (res.ok) {
-        alert('Producto eliminado.');
-        loadProducts();
-      } else {
-        alert('Error al eliminar.');
-      }
+      if (res.ok) loadProducts();
+      else alert('Error al eliminar producto');
     }
-
-    loadProducts();
   </script>
 </body>
 </html>

@@ -15,9 +15,15 @@
         <h2>Autenticación</h2>
         <input id="username" placeholder="Usuario" required>
         <input id="password" type="password" placeholder="Contraseña" required>
+        <select id="role">
+            <option value="user">Usuario</option>
+            <option value="admin">Administrador</option>
+        </select>
+        <br>
         <button onclick="register()">Registrar</button>
         <button onclick="login()">Iniciar Sesión</button>
     </div>
+
 
     <div id="inicio-section">
         <h2>Inicio</h2>
@@ -50,12 +56,17 @@
         function register() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+
             fetch('/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            }).then(r => r.json()).then(data => alert(data.message));
+                body: JSON.stringify({ username, password, role })
+            })
+            .then(r => r.json())
+            .then(data => alert(data.message));
         }
+
 
         function login() {
             const username = document.getElementById('username').value;
