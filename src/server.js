@@ -10,15 +10,15 @@ const { JWT_SECRET, MONGO_URI } = require('./config');
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
 
-// Middleware de autenticación para sockets
-const messageHistory = []; // historial del chat en memoria
-
-// Inicializar servidor
+// ====== Configuración del servidor ======
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: { origin: '*' }
+});
 
-// ====== Middleware general ======
+const messageHistory = []; // Historial de chat
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -35,50 +35,45 @@ mongoose.connect(MONGO_URI, {
 app.use('/', authRoutes);
 app.use('/api/products', productRoutes);
 
-// ====== Socket.IO con JWT ======
+// ====== Middleware de autenticación para sockets ======
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token;
-  if (!token) {
-    console.log('❌ Conexión sin token');
-    return next(new Error('Authentication error'));
-  }
+  if (!token) return next(new Error('No token'));
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     socket.user = decoded;
     next();
-  } catch (err) {
-    console.log('❌ Token inválido:', err.message);
-    next(new Error('Authentication error'));
+  } catch {
+    next(new Error('Token inválido'));
   }
 });
 
+// ====== Lógica del chat ======
 io.on('connection', (socket) => {
-  const username = socket.user?.username || 'desconocido';
-  console.log(`🟢 Usuario ${username} conectado al chat`);
+  const username = socket.user?.username || 'Anónimo';
+  console.log(`🟢 ${username} conectado`);
 
-  // Enviar historial previo al nuevo usuario
+  // Enviar historial previo solo al usuario que se conecta
   socket.emit('messageHistory', messageHistory);
 
-  // Escuchar mensajes nuevos
+  // Escuchar nuevos mensajes
   socket.on('chatmessage', (msg) => {
-    if (!socket.user) return;
+    if (!msg || !socket.user) return;
     const message = {
       name: socket.user.username,
       msg,
       timestamp: new Date().toLocaleTimeString()
     };
-    console.log(`[CHAT] ${message.timestamp} - ${message.name}: ${message.msg}`);
+    console.log(`[CHAT] ${message.name}: ${message.msg}`);
     messageHistory.push(message);
-    io.emit('chatmessage', message);
+    io.emit('chatmessage', message); // Broadcast global
   });
 
   socket.on('disconnect', () => {
-    console.log(`🔴 Usuario ${username} desconectado`);
+    console.log(`🔴 ${username} desconectado`);
   });
 });
 
-// ====== Iniciar servidor ======
+// ====== Inicio del servidor ======
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
-});
+server.listen(PORT, () => console.log(`🚀 Servidor en puerto ${PORT}`));

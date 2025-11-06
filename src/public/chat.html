@@ -43,7 +43,6 @@
 <body>
   <h2>Chat en tiempo real</h2>
   <button id="back" onclick="window.location.href='/'">Volver al inicio</button>
-
   <ul id="messages"></ul>
 
   <form id="form" action="">
@@ -53,38 +52,29 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) {
       alert('Debes iniciar sesión primero.');
       window.location.href = '/';
     }
 
-    // Conexión con token
     const socket = io({ auth: { token } });
     const messages = document.getElementById('messages');
     const form = document.getElementById('form');
     const input = document.getElementById('input');
 
-    socket.on('connect', () => {
-      console.log('✅ Conectado al chat');
-    });
+    socket.on('connect', () => console.log('✅ Conectado al chat'));
+    socket.on('disconnect', () => console.log('🔴 Desconectado del chat'));
 
-    socket.on('disconnect', () => {
-      console.log('🔴 Desconectado del chat');
-    });
-
-    // Cargar historial
-    socket.on('messageHistory', (history) => {
+    socket.on('messageHistory', history => {
       messages.innerHTML = '';
       history.forEach(m => appendMessage(m.name, m.msg, m.timestamp));
     });
 
-    // Escuchar nuevos mensajes
     socket.on('chatmessage', (data) => {
       appendMessage(data.name, data.msg, data.timestamp);
     });
 
-    // Enviar mensaje
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       if (input.value.trim()) {
@@ -93,7 +83,6 @@
       }
     });
 
-    // Mostrar mensajes en pantalla
     function appendMessage(name, msg, time) {
       const li = document.createElement('li');
       li.textContent = `[${time}] ${name}: ${msg}`;

@@ -1,228 +1,314 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Gestión de Productos</title>
+  <meta charset="utf-8" />
+  <title>Productos</title>
   <style>
+    /* Estilo coherente con tu tema blanco/negro/gris */
     body {
       font-family: sans-serif;
       background: #f9f9f9;
       margin: 0;
       padding: 20px;
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 1.5rem;
       color: #222;
     }
-
-    form {
-      background: #fff;
-      padding: 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      max-width: 600px;
-      margin: 0 auto 2rem auto;
+    header {
+      text-align: center;
+      margin-bottom: 18px;
     }
-
-    input, textarea {
-      width: 100%;
-      padding: 0.6rem;
-      margin: 0.4rem 0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 1rem;
-      box-sizing: border-box;
-    }
-
-    textarea {
-      resize: vertical;
-    }
-
-    button {
-      background: #333;
-      color: white;
-      border: none;
-      padding: 0.6rem 1rem;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-
-    button:hover {
-      background: #000;
-    }
-
-    #back {
-      background: #555;
-      margin-bottom: 1rem;
-    }
-
-    #back:hover {
-      background: #000;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-      background: #fff;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    th, td {
-      padding: 0.8rem;
-      text-align: left;
-      border-bottom: 1px solid #eee;
-    }
-
-    th {
-      background: #efefef;
-      color: #333;
-    }
-
-    tr:hover td {
-      background: #f5f5f5;
-    }
-
-    .actions button {
-      margin-right: 0.3rem;
-    }
-
-    .btn-danger {
-      background: #d33;
-    }
-
-    .btn-danger:hover {
-      background: #b22;
-    }
-
-    .btn-success {
-      background: #2e7d32;
-    }
-
-    .btn-success:hover {
-      background: #256528;
-    }
-
     .container {
       max-width: 900px;
-      margin: auto;
+      margin: 0 auto;
     }
+    .top {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:1rem;
+      margin-bottom: 12px;
+    }
+    .card {
+      background: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      margin-bottom: 18px;
+    }
+    form input, form textarea {
+      width:100%;
+      padding:8px;
+      margin:6px 0;
+      border:1px solid #ddd;
+      border-radius:6px;
+      box-sizing:border-box;
+      background:#fafafa;
+    }
+    button {
+      background:#333;
+      color:#fff;
+      border:none;
+      padding:8px 12px;
+      border-radius:6px;
+      cursor:pointer;
+    }
+    button.secondary {
+      background:#555;
+    }
+    table {
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+      border-radius:8px;
+      overflow:hidden;
+      box-shadow:0 2px 8px rgba(0,0,0,0.04);
+    }
+    th, td {
+      padding:10px 12px;
+      border-bottom:1px solid #eee;
+      text-align:left;
+    }
+    th { background:#f3f3f3; color:#333; }
+    tr:hover td { background:#fafafa; }
+    .actions { display:flex; gap:8px; }
+    .btn-edit { background:#2e7d32; }
+    .btn-delete { background:#d33; }
+    .muted { color:#666; font-size:0.95rem; }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Gestión de Productos</h2>
-    <button id="back" onclick="window.location.href='/'">Volver al inicio</button>
+    <header>
+      <h2>Productos</h2>
+      <div class="muted">Ver productos - solo administradores pueden gestionar (crear/editar/eliminar)</div>
+    </header>
 
-    <form id="productForm">
-      <input type="text" id="name" placeholder="Nombre del producto" required>
-      <textarea id="description" placeholder="Descripción del producto" required></textarea>
-      <input type="number" id="price" placeholder="Precio (€)" step="0.01" required>
-      <button type="submit" id="submitBtn">Agregar producto</button>
-    </form>
+    <div class="top">
+      <div>
+        <button onclick="window.location.href='/'">← Volver al inicio</button>
+      </div>
+      <div id="user-info" class="muted"></div>
+    </div>
 
-    <table id="productTable">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Descripción</th>
-          <th>Precio (€)</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+    <!-- Formulario de creación (se oculta si no es admin) -->
+    <div id="admin-form" class="card" style="display:none;">
+      <h3 id="form-title">Crear producto</h3>
+      <form id="productForm">
+        <input id="name" placeholder="Nombre del producto" required />
+        <textarea id="description" placeholder="Descripción (opcional)"></textarea>
+        <input id="price" placeholder="Precio (€)" type="number" step="0.01" min="0" required />
+        <div style="margin-top:8px;">
+          <button type="submit" id="submitBtn">Agregar producto</button>
+          <button type="button" class="secondary" onclick="cancelEdit()">Cancelar</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Lista de productos (visible para todos los usuarios autenticados) -->
+    <div class="card">
+      <table aria-label="Lista de productos">
+        <thead>
+          <tr><th>Nombre</th><th>Descripción</th><th>Precio (€)</th><th id="acciones-col">Acciones</th></tr>
+        </thead>
+        <tbody id="productTableBody">
+          <!-- Productos cargados dinámicamente -->
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <script>
-    const token = localStorage.getItem('token');
+    // Usa sessionStorage (como en el resto de tu app) — permite sesiones independientes por ventana
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (!token) {
       alert('Debes iniciar sesión primero.');
       window.location.href = '/';
     }
 
-    const form = document.getElementById('productForm');
-    const tableBody = document.querySelector('#productTable tbody');
-    const submitBtn = document.getElementById('submitBtn');
+    // Decodificar token con precaución
+    let payload = {};
+    try {
+      payload = JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+      console.error('Token inválido', e);
+      alert('Token inválido — inicia sesión de nuevo.');
+      sessionStorage.removeItem('token'); localStorage.removeItem('token');
+      window.location.href = '/';
+    }
+
+    const isAdmin = payload.role === 'admin';
+    document.getElementById('user-info').textContent = `Conectado: ${payload.username} (${payload.role})`;
+
+    // Mostrar/ocultar el formulario de administración
+    const adminForm = document.getElementById('admin-form');
+    const accionesCol = document.getElementById('acciones-col');
+    if (isAdmin) {
+      adminForm.style.display = 'block';
+      accionesCol.style.display = 'table-cell';
+    } else {
+      adminForm.style.display = 'none';
+      // Si no admin, ocultar la columna de acciones
+      accionesCol.style.display = 'none';
+    }
+
+    const tableBody = document.getElementById('productTableBody');
     let editId = null;
 
     async function loadProducts() {
-      const res = await fetch('/api/products', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const products = await res.json();
+      try {
+        const res = await fetch('/api/products', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) {
+          if (res.status === 401 || res.status === 403) {
+            alert('No autorizado. Inicia sesión de nuevo.');
+            sessionStorage.removeItem('token'); localStorage.removeItem('token');
+            window.location.href = '/';
+            return;
+          }
+          throw new Error('Error cargando productos');
+        }
+        const products = await res.json();
+        renderTable(products);
+      } catch (err) {
+        console.error(err);
+        alert('Error al cargar productos.');
+      }
+    }
 
+    function renderTable(products) {
       tableBody.innerHTML = '';
       products.forEach(p => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${p.name}</td>
-          <td>${p.description}</td>
-          <td>${p.price.toFixed(2)}</td>
-          <td class="actions">
-            <button class="btn-success" onclick="editProduct('${p._id}', '${p.name}', '${p.description}', ${p.price})">Editar</button>
-            <button class="btn-danger" onclick="deleteProduct('${p._id}')">Eliminar</button>
-          </td>
-        `;
+
+        const nameTd = document.createElement('td');
+        nameTd.textContent = p.name;
+
+        const descTd = document.createElement('td');
+        descTd.textContent = p.description || '';
+
+        const priceTd = document.createElement('td');
+        priceTd.textContent = Number(p.price).toFixed(2);
+
+        tr.appendChild(nameTd);
+        tr.appendChild(descTd);
+        tr.appendChild(priceTd);
+
+        // Acciones (solo si es admin)
+        const actionsTd = document.createElement('td');
+        if (isAdmin) {
+          const editBtn = document.createElement('button');
+          editBtn.className = 'btn-edit';
+          editBtn.textContent = 'Editar';
+          editBtn.onclick = () => startEdit(p._id, p.name, p.description || '', p.price);
+
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn-delete';
+          delBtn.textContent = 'Eliminar';
+          delBtn.onclick = () => deleteProduct(p._id);
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'actions';
+          wrapper.appendChild(editBtn);
+          wrapper.appendChild(delBtn);
+          actionsTd.appendChild(wrapper);
+        } else {
+          // si no admin dejar celda vacía (y ocultada con CSS si quieres)
+          actionsTd.textContent = '';
+        }
+        tr.appendChild(actionsTd);
+
         tableBody.appendChild(tr);
       });
     }
 
-    loadProducts();
+    // ---------- ADMIN: crear / editar / eliminar ----------
+    const form = document.getElementById('productForm');
+    const inputName = document.getElementById('name');
+    const inputDesc = document.getElementById('description');
+    const inputPrice = document.getElementById('price');
+    const submitBtn = document.getElementById('submitBtn');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (!isAdmin) return alert('Acceso denegado');
 
-      const name = document.getElementById('name').value;
-      const description = document.getElementById('description').value;
-      const price = parseFloat(document.getElementById('price').value);
+      const name = inputName.value.trim();
+      const description = inputDesc.value.trim();
+      const price = parseFloat(inputPrice.value);
 
-      const method = editId ? 'PUT' : 'POST';
-      const url = editId ? `/api/products/${editId}` : '/api/products';
+      if (!name || isNaN(price)) return alert('Completa nombre y precio válido');
 
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ name, description, price })
-      });
+      const payload = { name, description, price };
 
-      if (res.ok) {
-        alert(editId ? 'Producto actualizado' : 'Producto agregado');
-        form.reset();
-        submitBtn.textContent = 'Agregar producto';
+      try {
+        const url = editId ? `/api/products/${editId}` : '/api/products';
+        const method = editId ? 'PUT' : 'POST';
+
+        const res = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(()=>({message:'Error'}));
+          return alert(err.message || 'Error en la operación');
+        }
+
+        // limpio formulario
         editId = null;
+        inputName.value = '';
+        inputDesc.value = '';
+        inputPrice.value = '';
+        submitBtn.textContent = 'Agregar producto';
         loadProducts();
-      } else {
-        alert('Error al guardar el producto');
+      } catch (err) {
+        console.error(err);
+        alert('Error de red al guardar producto');
       }
     });
 
-    function editProduct(id, name, description, price) {
-      document.getElementById('name').value = name;
-      document.getElementById('description').value = description;
-      document.getElementById('price').value = price;
+    function startEdit(id, name, description, price) {
+      if (!isAdmin) return alert('Acceso denegado');
       editId = id;
+      inputName.value = name;
+      inputDesc.value = description;
+      inputPrice.value = price;
       submitBtn.textContent = 'Guardar cambios';
-      submitBtn.style.background = '#2e7d32';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelEdit() {
+      editId = null;
+      inputName.value = '';
+      inputDesc.value = '';
+      inputPrice.value = '';
+      submitBtn.textContent = 'Agregar producto';
     }
 
     async function deleteProduct(id) {
-      if (!confirm('¿Seguro que quieres eliminar este producto?')) return;
-      const res = await fetch(`/api/products/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) loadProducts();
-      else alert('Error al eliminar producto');
+      if (!confirm('¿Seguro?')) return;
+      try {
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(()=>({message:'Error'}));
+          return alert(err.message || 'Error al eliminar');
+        }
+        loadProducts();
+      } catch (err) {
+        console.error(err);
+        alert('Error de red al eliminar');
+      }
     }
+
+    // carga inicial
+    loadProducts();
   </script>
 </body>
 </html>
