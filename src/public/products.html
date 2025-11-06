@@ -1,314 +1,235 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <title>Productos</title>
+  <meta charset="UTF-8">
+  <title>Productos - Portal</title>
   <style>
-    /* Estilo coherente con tu tema blanco/negro/gris */
     body {
-      font-family: sans-serif;
-      background: #f9f9f9;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9f9f9;
       margin: 0;
-      padding: 20px;
-      color: #222;
-    }
-    header {
+      padding: 2rem;
+      color: #333;
       text-align: center;
-      margin-bottom: 18px;
     }
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
+
+    h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
     }
-    .top {
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:1rem;
-      margin-bottom: 12px;
-    }
-    .card {
+
+    #product-form {
+      display: none;
       background: #fff;
-      padding: 16px;
+      border: 1px solid #ddd;
       border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-      margin-bottom: 18px;
+      padding: 1rem;
+      max-width: 400px;
+      margin: 1rem auto 2rem;
+      text-align: left;
     }
-    form input, form textarea {
-      width:100%;
-      padding:8px;
-      margin:6px 0;
-      border:1px solid #ddd;
-      border-radius:6px;
-      box-sizing:border-box;
-      background:#fafafa;
+
+    input, textarea, button {
+      display: block;
+      width: 100%;
+      padding: 0.6rem;
+      margin: 0.5rem 0;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
     }
+
+    textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
     button {
-      background:#333;
-      color:#fff;
-      border:none;
-      padding:8px 12px;
-      border-radius:6px;
-      cursor:pointer;
+      background-color: #333;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.3s;
     }
-    button.secondary {
-      background:#555;
+
+    button:hover {
+      background-color: #555;
     }
+
     table {
-      width:100%;
-      border-collapse:collapse;
-      background:#fff;
-      border-radius:8px;
-      overflow:hidden;
-      box-shadow:0 2px 8px rgba(0,0,0,0.04);
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
     }
+
     th, td {
-      padding:10px 12px;
-      border-bottom:1px solid #eee;
-      text-align:left;
+      padding: 0.8rem;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
     }
-    th { background:#f3f3f3; color:#333; }
-    tr:hover td { background:#fafafa; }
-    .actions { display:flex; gap:8px; }
-    .btn-edit { background:#2e7d32; }
-    .btn-delete { background:#d33; }
-    .muted { color:#666; font-size:0.95rem; }
+
+    th {
+      background: #efefef;
+    }
+
+    tr:hover td {
+      background: #f5f5f5;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-edit {
+      background: #2e7d32;
+    }
+
+    .btn-delete {
+      background: #c62828;
+    }
+
+    .btn-edit:hover {
+      background: #256528;
+    }
+
+    .btn-delete:hover {
+      background: #a32222;
+    }
+
+    #back {
+      margin-top: 1.5rem;
+    }
+
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h2>Productos</h2>
-      <div class="muted">Ver productos - solo administradores pueden gestionar (crear/editar/eliminar)</div>
-    </header>
+  <h2>Gestión de Productos</h2>
 
-    <div class="top">
-      <div>
-        <button onclick="window.location.href='/'">← Volver al inicio</button>
-      </div>
-      <div id="user-info" class="muted"></div>
-    </div>
+  <form id="product-form">
+    <input type="text" id="name" placeholder="Nombre del producto" required>
+    <textarea id="description" placeholder="Descripción del producto" required></textarea>
+    <input type="number" id="price" placeholder="Precio (€)" step="0.01" required>
+    <button type="submit" id="submitBtn">Agregar producto</button>
+  </form>
 
-    <!-- Formulario de creación (se oculta si no es admin) -->
-    <div id="admin-form" class="card" style="display:none;">
-      <h3 id="form-title">Crear producto</h3>
-      <form id="productForm">
-        <input id="name" placeholder="Nombre del producto" required />
-        <textarea id="description" placeholder="Descripción (opcional)"></textarea>
-        <input id="price" placeholder="Precio (€)" type="number" step="0.01" min="0" required />
-        <div style="margin-top:8px;">
-          <button type="submit" id="submitBtn">Agregar producto</button>
-          <button type="button" class="secondary" onclick="cancelEdit()">Cancelar</button>
-        </div>
-      </form>
-    </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Precio (€)</th>
+        <th class="admin-only">Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="product-list"></tbody>
+  </table>
 
-    <!-- Lista de productos (visible para todos los usuarios autenticados) -->
-    <div class="card">
-      <table aria-label="Lista de productos">
-        <thead>
-          <tr><th>Nombre</th><th>Descripción</th><th>Precio (€)</th><th id="acciones-col">Acciones</th></tr>
-        </thead>
-        <tbody id="productTableBody">
-          <!-- Productos cargados dinámicamente -->
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <button id="back" onclick="goBack()">Volver al inicio</button>
 
   <script>
-    // Usa sessionStorage (como en el resto de tu app) — permite sesiones independientes por ventana
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (!token) {
       alert('Debes iniciar sesión primero.');
       window.location.href = '/';
     }
 
-    // Decodificar token con precaución
-    let payload = {};
-    try {
-      payload = JSON.parse(atob(token.split('.')[1]));
-    } catch (e) {
-      console.error('Token inválido', e);
-      alert('Token inválido — inicia sesión de nuevo.');
-      sessionStorage.removeItem('token'); localStorage.removeItem('token');
-      window.location.href = '/';
-    }
-
+    const payload = JSON.parse(atob(token.split('.')[1]));
     const isAdmin = payload.role === 'admin';
-    document.getElementById('user-info').textContent = `Conectado: ${payload.username} (${payload.role})`;
 
-    // Mostrar/ocultar el formulario de administración
-    const adminForm = document.getElementById('admin-form');
-    const accionesCol = document.getElementById('acciones-col');
-    if (isAdmin) {
-      adminForm.style.display = 'block';
-      accionesCol.style.display = 'table-cell';
-    } else {
-      adminForm.style.display = 'none';
-      // Si no admin, ocultar la columna de acciones
-      accionesCol.style.display = 'none';
-    }
+    const form = document.getElementById('product-form');
+    const productList = document.getElementById('product-list');
+    const submitBtn = document.getElementById('submitBtn');
 
-    const tableBody = document.getElementById('productTableBody');
     let editId = null;
 
-    async function loadProducts() {
-      try {
-        const res = await fetch('/api/products', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        if (!res.ok) {
-          if (res.status === 401 || res.status === 403) {
-            alert('No autorizado. Inicia sesión de nuevo.');
-            sessionStorage.removeItem('token'); localStorage.removeItem('token');
-            window.location.href = '/';
-            return;
-          }
-          throw new Error('Error cargando productos');
-        }
-        const products = await res.json();
-        renderTable(products);
-      } catch (err) {
-        console.error(err);
-        alert('Error al cargar productos.');
-      }
+    if (isAdmin) {
+      form.style.display = 'block';
+    } else {
+      document.querySelectorAll('.admin-only').forEach(el => el.remove());
     }
 
-    function renderTable(products) {
-      tableBody.innerHTML = '';
+    async function loadProducts() {
+      const res = await fetch('/api/products', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      const products = await res.json();
+
+      productList.innerHTML = '';
       products.forEach(p => {
         const tr = document.createElement('tr');
-
-        const nameTd = document.createElement('td');
-        nameTd.textContent = p.name;
-
-        const descTd = document.createElement('td');
-        descTd.textContent = p.description || '';
-
-        const priceTd = document.createElement('td');
-        priceTd.textContent = Number(p.price).toFixed(2);
-
-        tr.appendChild(nameTd);
-        tr.appendChild(descTd);
-        tr.appendChild(priceTd);
-
-        // Acciones (solo si es admin)
-        const actionsTd = document.createElement('td');
-        if (isAdmin) {
-          const editBtn = document.createElement('button');
-          editBtn.className = 'btn-edit';
-          editBtn.textContent = 'Editar';
-          editBtn.onclick = () => startEdit(p._id, p.name, p.description || '', p.price);
-
-          const delBtn = document.createElement('button');
-          delBtn.className = 'btn-delete';
-          delBtn.textContent = 'Eliminar';
-          delBtn.onclick = () => deleteProduct(p._id);
-
-          const wrapper = document.createElement('div');
-          wrapper.className = 'actions';
-          wrapper.appendChild(editBtn);
-          wrapper.appendChild(delBtn);
-          actionsTd.appendChild(wrapper);
-        } else {
-          // si no admin dejar celda vacía (y ocultada con CSS si quieres)
-          actionsTd.textContent = '';
-        }
-        tr.appendChild(actionsTd);
-
-        tableBody.appendChild(tr);
+        tr.innerHTML = `
+          <td>${p.name}</td>
+          <td>${p.description}</td>
+          <td>${p.price.toFixed(2)}</td>
+          ${isAdmin ? `
+          <td class="actions">
+            <button class="btn-edit" onclick="editProduct('${p._id}', '${p.name}', '${p.description}', ${p.price})">Editar</button>
+            <button class="btn-delete" onclick="deleteProduct('${p._id}')">Eliminar</button>
+          </td>` : ''}
+        `;
+        productList.appendChild(tr);
       });
     }
 
-    // ---------- ADMIN: crear / editar / eliminar ----------
-    const form = document.getElementById('productForm');
-    const inputName = document.getElementById('name');
-    const inputDesc = document.getElementById('description');
-    const inputPrice = document.getElementById('price');
-    const submitBtn = document.getElementById('submitBtn');
+    loadProducts();
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      if (!isAdmin) return alert('Acceso denegado');
 
-      const name = inputName.value.trim();
-      const description = inputDesc.value.trim();
-      const price = parseFloat(inputPrice.value);
+      const name = document.getElementById('name').value;
+      const description = document.getElementById('description').value;
+      const price = parseFloat(document.getElementById('price').value);
 
-      if (!name || isNaN(price)) return alert('Completa nombre y precio válido');
+      const method = editId ? 'PUT' : 'POST';
+      const url = editId ? `/api/products/${editId}` : '/api/products';
 
-      const payload = { name, description, price };
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name, description, price })
+      });
 
-      try {
-        const url = editId ? `/api/products/${editId}` : '/api/products';
-        const method = editId ? 'PUT' : 'POST';
-
-        const res = await fetch(url, {
-          method,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(()=>({message:'Error'}));
-          return alert(err.message || 'Error en la operación');
-        }
-
-        // limpio formulario
-        editId = null;
-        inputName.value = '';
-        inputDesc.value = '';
-        inputPrice.value = '';
+      if (res.ok) {
+        alert(editId ? 'Producto actualizado' : 'Producto agregado');
+        form.reset();
         submitBtn.textContent = 'Agregar producto';
+        editId = null;
         loadProducts();
-      } catch (err) {
-        console.error(err);
-        alert('Error de red al guardar producto');
+      } else {
+        alert('Error al guardar el producto');
       }
     });
 
-    function startEdit(id, name, description, price) {
-      if (!isAdmin) return alert('Acceso denegado');
+    function editProduct(id, name, description, price) {
+      document.getElementById('name').value = name;
+      document.getElementById('description').value = description;
+      document.getElementById('price').value = price;
       editId = id;
-      inputName.value = name;
-      inputDesc.value = description;
-      inputPrice.value = price;
       submitBtn.textContent = 'Guardar cambios';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function cancelEdit() {
-      editId = null;
-      inputName.value = '';
-      inputDesc.value = '';
-      inputPrice.value = '';
-      submitBtn.textContent = 'Agregar producto';
     }
 
     async function deleteProduct(id) {
-      if (!confirm('¿Seguro?')) return;
-      try {
-        const res = await fetch(`/api/products/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(()=>({message:'Error'}));
-          return alert(err.message || 'Error al eliminar');
-        }
-        loadProducts();
-      } catch (err) {
-        console.error(err);
-        alert('Error de red al eliminar');
-      }
+      if (!confirm('¿Seguro que deseas eliminar este producto?')) return;
+      const res = await fetch(`/api/products/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (res.ok) loadProducts();
+      else alert('Error al eliminar producto');
     }
 
-    // carga inicial
-    loadProducts();
+    function goBack() {
+      window.location.href = '/';
+    }
   </script>
 </body>
 </html>
