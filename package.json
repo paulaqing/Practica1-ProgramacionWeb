@@ -1,4 +1,11 @@
 {
+  "name": "portal-productos-chat",
+  "version": "1.0.0",
+  "description": "Portal de productos con autenticación JWT y chat en tiempo real",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",

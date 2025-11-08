@@ -53,7 +53,7 @@ npm install
 
 ### 3. Iniciar servidor
 ```bash
-node src/server.js
+npm start o node src/server.js
 ```
 
 Acceder a la aplicación: `http://localhost:3000`

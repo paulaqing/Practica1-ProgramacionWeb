@@ -48,21 +48,27 @@
     ul {
       list-style: none;
       padding: 0;
+      display: flex;
+      flex-direction: column;
     }
 
     li {
       padding: 0.5rem 0;
-      border-bottom: 1px solid #ddd;
+      border-bottom: none;
+      display: flex;
+      flex-direction: column;
     }
 
     #messages {
-      background: #fff;
+      background: #c6c6c6e0; 
       border-radius: 6px;
       padding: 1rem;
       max-width: 600px;
       margin: 1rem auto;
-      height: 300px;
+      height: 400px;
       overflow-y: auto;
+      display: flex;
+      flex-direction: column;
     }
 
     #form {
@@ -83,6 +89,37 @@
       margin-top: 1rem;
     }
 
+    .user-msg {
+      background-color: #f8b8dc; 
+      align-self: flex-end;
+      border-radius: 15px 15px 0 15px;
+      padding: 0.5rem 1rem;
+      max-width: 70%;
+      margin: 0.2rem 0;
+    }
+
+    .other-msg {
+      background-color: #fff;
+      align-self: flex-start;
+      border-radius: 15px 15px 15px 0;
+      padding: 0.5rem 1rem;
+      max-width: 70%;
+      margin: 0.2rem 0;
+    }
+
+    .msg-name {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .msg-time {
+      display: block;
+      font-size: 0.7rem;
+      color: #555;
+      text-align: right;
+      margin-top: 2px;
+    }
   </style>
 </head>
 <body>
@@ -131,45 +168,34 @@
     const userRoleSpan = document.getElementById('user-role');
     const productsBtn = document.getElementById('products-btn');
 
-    // ✅ Registro
     function register() {
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
       const role = document.getElementById('role').value;
-
       fetch('/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password, role })
-      })
-      .then(r => r.json())
-      .then(data => alert(data.message))
-      .catch(err => console.error(err));
+      }).then(r => r.json()).then(data => alert(data.message));
     }
 
-    // ✅ Login
     function login() {
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
-
       fetch('/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
-      })
-      .then(r => r.json())
-      .then(data => {
+      }).then(r => r.json()).then(data => {
         if (data.token) {
           sessionStorage.setItem('token', data.token);
           showInicio(data.token);
         } else {
           alert('Usuario o contraseña incorrectos');
         }
-      })
-      .catch(err => console.error(err));
+      });
     }
 
-    // ✅ Mostrar inicio con info del token
     function decodeToken(token) {
       return JSON.parse(atob(token.split('.')[1]));
     }
@@ -181,12 +207,9 @@
       const payload = decodeToken(token);
       userNameSpan.textContent = payload.username;
       userRoleSpan.textContent = payload.role;
-
-      // Si es usuario normal, puede ver productos; si es admin, también los gestiona
       productsBtn.style.display = 'inline-block';
     }
 
-    // ✅ Chat
     function goToChat() {
       inicioSection.style.display = 'none';
       chatSection.style.display = 'block';
@@ -230,7 +253,22 @@
 
       function appendMessage(name, msg, time) {
         const li = document.createElement('li');
-        li.textContent = `[${time}] ${name}: ${msg}`;
+        li.className = (name === decodeToken(sessionStorage.getItem('token')).username) ? 'user-msg' : 'other-msg';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'msg-name';
+        nameSpan.textContent = name;
+        li.appendChild(nameSpan);
+
+        const msgSpan = document.createElement('span');
+        msgSpan.textContent = msg;
+        li.appendChild(msgSpan);
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'msg-time';
+        timeSpan.textContent = time;
+        li.appendChild(timeSpan);
+
         messages.appendChild(li);
         messages.scrollTop = messages.scrollHeight;
       }
@@ -252,7 +290,6 @@
       chatSection.style.display = 'none';
     }
 
-    // ✅ Mostrar autenticación al entrar por primera vez
     window.addEventListener('load', () => {
       const token = sessionStorage.getItem('token');
       if (token) {
